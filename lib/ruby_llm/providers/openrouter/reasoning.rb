@@ -2,13 +2,9 @@
 
 module RubyLLM
   module Providers
-    module OpenAI
-      # Chat methods of the OpenAI API integration
-      module Chat
-        def completion_url
-          'chat/completions'
-        end
-
+    module OpenRouter
+      # Reasoning methods of the OpenRouter API integration
+      module Reasoning
         module_function
 
         def render_payload(messages, tools:, temperature:, model:, stream: false, reasoning: false)
@@ -20,6 +16,7 @@ module RubyLLM
 
           # Only include temperature if it's not nil (some models don't accept it)
           payload[:temperature] = temperature unless temperature.nil?
+          payload[:reasoning] = { effort: reasoning } if reasoning
 
           if tools.any?
             payload[:tools] = tools.map { |_, tool| tool_for(tool) }
@@ -45,28 +42,9 @@ module RubyLLM
             tool_calls: parse_tool_calls(message_data['tool_calls']),
             input_tokens: data['usage']['prompt_tokens'],
             output_tokens: data['usage']['completion_tokens'],
-            model_id: data['model']
+            model_id: data['model'],
+            reasoning: message_data['reasoning']
           )
-        end
-
-        def format_messages(messages)
-          messages.map do |msg|
-            {
-              role: format_role(msg.role),
-              content: Media.format_content(msg.content),
-              tool_calls: format_tool_calls(msg.tool_calls),
-              tool_call_id: msg.tool_call_id
-            }.compact
-          end
-        end
-
-        def format_role(role)
-          case role
-          when :system
-            'developer'
-          else
-            role.to_s
-          end
         end
       end
     end

@@ -18,7 +18,8 @@ module RubyLLM
             content: data.dig('choices', 0, 'delta', 'content'),
             tool_calls: parse_tool_calls(data.dig('choices', 0, 'delta', 'tool_calls'), parse_arguments: false),
             input_tokens: data.dig('usage', 'prompt_tokens'),
-            output_tokens: data.dig('usage', 'completion_tokens')
+            output_tokens: data.dig('usage', 'completion_tokens'),
+            reasoning: data.dig('choices', 0, 'delta', 'reasoning')
           )
         end
       end

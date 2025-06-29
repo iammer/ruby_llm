@@ -125,6 +125,11 @@ module RubyLLM
         self
       end
 
+      def with_reasoning(...)
+        to_llm.with_reasoning(...)
+        self
+      end
+
       def with_context(...)
         to_llm.with_context(...)
         self
@@ -174,13 +179,16 @@ module RubyLLM
 
         tool_call_id = find_tool_call_id(message.tool_call_id) if message.tool_call_id
 
+        message.content = try(:deslop, message.content) || message.content
+
         transaction do
           @message.update!(
             role: message.role,
             content: message.content,
             model_id: message.model_id,
             input_tokens: message.input_tokens,
-            output_tokens: message.output_tokens
+            output_tokens: message.output_tokens,
+            reasoning: message.reasoning
           )
           @message.write_attribute(@message.class.tool_call_foreign_key, tool_call_id) if tool_call_id
           @message.save!

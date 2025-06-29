@@ -4,7 +4,8 @@ module RubyLLM
   # Represents the content sent to or received from an LLM.
   # Selects the appropriate attachment class based on the content type.
   class Content
-    attr_reader :text, :attachments
+    attr_accessor :text
+    attr_reader :attachments
 
     def initialize(text = nil, attachments = nil)
       @text = text

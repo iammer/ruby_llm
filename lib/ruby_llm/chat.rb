@@ -11,7 +11,7 @@ module RubyLLM
   class Chat
     include Enumerable
 
-    attr_reader :model, :messages, :tools
+    attr_reader :model, :messages, :tools, :temperature, :reasoning
 
     def initialize(model: nil, provider: nil, assume_model_exists: false, context: nil)
       if assume_model_exists && !provider
@@ -22,6 +22,7 @@ module RubyLLM
       @config = context&.config || RubyLLM.config
       model_id = model || @config.default_model
       with_model(model_id, provider: provider, assume_exists: assume_model_exists)
+      @reasoning = false
       @temperature = 0.7
       @messages = []
       @tools = {}
@@ -71,6 +72,11 @@ module RubyLLM
       self
     end
 
+    def with_reasoning(reasoning)
+      @reasoning = reasoning
+      self
+    end
+
     def with_context(context)
       @context = context
       @config = context.config
@@ -98,10 +104,12 @@ module RubyLLM
         messages,
         tools: @tools,
         temperature: @temperature,
+        reasoning: @reasoning,
         model: @model.id,
         connection: @connection,
         &
       )
+      
       @on[:end_message]&.call(response)
 
       add_message response

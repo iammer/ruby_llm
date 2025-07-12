@@ -13,7 +13,8 @@ module RubyLLM
           Chunk.new(
             role: :assistant,
             model_id: extract_model_id(data),
-            content: extract_content(data),
+            content: extract_content(data, false),
+            reasoning: extract_content(data, true),
             input_tokens: extract_input_tokens(data),
             output_tokens: extract_output_tokens(data),
             tool_calls: extract_tool_calls(data)
@@ -26,14 +27,14 @@ module RubyLLM
           data['modelVersion']
         end
 
-        def extract_content(data)
+        def extract_content(data, thought)
           return nil unless data['candidates']&.any?
 
           candidate = data['candidates'][0]
           parts = candidate.dig('content', 'parts')
           return nil unless parts
 
-          text_parts = parts.select { |p| p['text'] }
+          text_parts = parts.select { |p| p['text'] && !!p['thought'] == thought }
           text_parts.map { |p| p['text'] }.join if text_parts.any?
         end
 

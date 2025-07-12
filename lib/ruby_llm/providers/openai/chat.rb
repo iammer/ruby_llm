@@ -61,6 +61,7 @@ module RubyLLM
         end
 
         def format_role(role)
+          return role
           case role
           when :system
             'developer'

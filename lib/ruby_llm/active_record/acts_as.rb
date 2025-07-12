@@ -86,6 +86,10 @@ module RubyLLM
 
       def to_llm
         @chat ||= RubyLLM.chat(model: model_id)
+        @chat.with_temperature(temperature) if temperature
+        @chat.with_reasoning(reasoning) if reasoning
+        parameters = model_parameters
+        @chat.with_parameters(JSON.parse(parameters)) if parameters.present?
         @chat.reset_messages!
 
         messages.each do |msg|
@@ -99,7 +103,7 @@ module RubyLLM
       def with_instructions(instructions, replace: false)
         transaction do
           messages.where(role: :system).destroy_all if replace
-          messages.create!(role: :system, content: instructions)
+          messages.create!(role: :system, source: :system, content: instructions)
         end
         to_llm.with_instructions(instructions)
         self
@@ -146,7 +150,7 @@ module RubyLLM
       end
 
       def create_user_message(content, with: nil)
-        message_record = messages.create!(role: :user, content: content)
+        message_record = messages.create!(role: :user, source: :user, content: content)
         persist_content(message_record, with) if with.present?
         message_record
       end
@@ -171,15 +175,13 @@ module RubyLLM
       private
 
       def persist_new_message
-        @message = messages.create!(role: :assistant, content: String.new)
+        @message = messages.create!(role: :assistant, source: :assistant, content: String.new)
       end
 
       def persist_message_completion(message)
         return unless message
 
         tool_call_id = find_tool_call_id(message.tool_call_id) if message.tool_call_id
-
-        message.content = try(:deslop, message.content) || message.content
 
         transaction do
           @message.update!(

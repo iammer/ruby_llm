@@ -17,7 +17,7 @@ module RubyLLM
     end
 
     def add(chunk)
-      RubyLLM.logger.debug chunk.inspect
+      #RubyLLM.logger.debug chunk.inspect
       @model_id ||= chunk.model_id
 
       if chunk.tool_call?
@@ -28,7 +28,7 @@ module RubyLLM
       end
 
       count_tokens chunk
-      RubyLLM.logger.debug inspect
+      #RubyLLM.logger.debug inspect
     end
 
     def to_message

@@ -7,12 +7,12 @@ module RubyLLM
       module Reasoning
         module_function
 
-        def render_payload(messages, tools:, temperature:, model:, stream: false, reasoning: false)
-          payload = {
+        def render_payload(messages, tools:, temperature:, model:, stream: false, reasoning: false, parameters: {})
+          payload = parameters.merge(
             model: model,
             messages: format_messages(messages),
             stream: stream
-          }
+          )
 
           # Only include temperature if it's not nil (some models don't accept it)
           payload[:temperature] = temperature unless temperature.nil?

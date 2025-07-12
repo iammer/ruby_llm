@@ -26,6 +26,7 @@ module RubyLLM
       @temperature = 0.7
       @messages = []
       @tools = {}
+      @parameters = {}
       @on = {
         new_message: nil,
         end_message: nil
@@ -38,6 +39,11 @@ module RubyLLM
     end
 
     alias say ask
+
+    def with_parameters(parameters)
+      @parameters = parameters
+      self
+    end
 
     def with_instructions(instructions, replace: false)
       @messages = @messages.reject { |msg| msg.role == :system } if replace
@@ -107,6 +113,7 @@ module RubyLLM
         reasoning: @reasoning,
         model: @model.id,
         connection: @connection,
+        parameters: @parameters,
         &
       )
       

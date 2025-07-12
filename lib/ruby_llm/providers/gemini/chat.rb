@@ -11,13 +11,26 @@ module RubyLLM
           "models/#{@model}:generateContent"
         end
 
-        def render_payload(messages, tools:, temperature:, model:, stream: false, reasoning: false) # rubocop:disable Lint/UnusedMethodArgument
+        def render_payload(messages, tools:, temperature:, model:, stream: false, reasoning: nil, **) # rubocop:disable Lint/UnusedMethodArgument
           @model = model # Store model for completion_url/stream_url
+          generationConfig = {
+            temperature: temperature
+          }
+          if reasoning
+            thinkingBudget = 500
+            thinkingBudget = 200 if reasoning == 'low'
+            thinkingBudget = 800 if reasoning == 'high'
+            thinkingBudget = reasoning.to_i if reasoning.match(/^\d+$/)
+
+            generationConfig[:thinkingConfig] = {
+              includeThoughts: true,
+              thinkingBudget:
+            } 
+          end
+
           payload = {
             contents: format_messages(messages),
-            generationConfig: {
-              temperature: temperature
-            }
+            generationConfig: 
           }
           payload[:tools] = format_tools(tools) if tools.any?
           payload
@@ -69,9 +82,12 @@ module RubyLLM
           data = response.body
           tool_calls = extract_tool_calls(data)
 
+          RubyLLM.logger.debug data
+
           Message.new(
             role: :assistant,
-            content: extract_content(data),
+            content: extract_content(data, false),
+            reasoning: extract_content(data, true),
             tool_calls: tool_calls,
             input_tokens: data.dig('usageMetadata', 'promptTokenCount'),
             output_tokens: data.dig('usageMetadata', 'candidatesTokenCount'),
@@ -79,7 +95,7 @@ module RubyLLM
           )
         end
 
-        def extract_content(data)
+        def extract_content(data, thought)
           candidate = data.dig('candidates', 0)
           return '' unless candidate
 
@@ -88,7 +104,7 @@ module RubyLLM
 
           # Extract text content
           parts = candidate.dig('content', 'parts')
-          text_parts = parts&.select { |p| p['text'] }
+          text_parts = parts&.select { |p| p['text'] && !!p['thought'] == thought }
           return '' unless text_parts&.any?
 
           text_parts.map { |p| p['text'] }.join
